@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Personalized Ergonomic Calculator</title>
+  <meta name="description" content="A simple ergonomic calculator to estimate optimal seat height, seat depth, and keyboard height." />
+  <style>
+    /* Optional: make radios and inputs look consistent across browsers */
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+
+    /* Small responsive tweak for narrow screens */
+    @media (max-width: 520px) {
+      .grid-2 {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body style="background:#f5f7fb; margin:0; padding:20px;">
+  <div id="ergo-calculator-container"
+       style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 640px; margin: 10px auto; padding: 20px; border: 2px solid #eee; border-radius: 20px; background-color: #fff; color: #333; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+
+    <h2 style="text-align: center; color: #1a1a1b; margin-bottom: 25px;">
+      Personalized Ergonomic Calculator
+    </h2>
+
+    <div style="display: flex; justify-content: center; margin-bottom: 25px; gap: 30px; font-weight: bold;">
+      <label style="cursor: pointer;">
+        <input type="radio" name="unit" value="cm" checked> Centimeters (cm)
+      </label>
+      <label style="cursor: pointer;">
+        <input type="radio" name="unit" value="in"> Inches (in)
+      </label>
+    </div>
+
+    <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-size: 0.9em; margin-bottom: 5px; font-weight: 600;">Your Height:</label>
+        <input type="number" id="userHeight" placeholder="e.g. 175" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+        <small style="color:#666;">Enter in the same unit selected above.</small>
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 0.9em; margin-bottom: 5px; font-weight: 600;">Current Desk Height:</label>
+        <input type="number" id="currDesk" placeholder="e.g. 75" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 0.9em; margin-bottom: 5px; font-weight: 600;">Current Chair Height:</label>
+        <input type="number" id="currChair" placeholder="e.g. 52" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 0.9em; margin-bottom: 5px; font-weight: 600;">Current Seat Depth:</label>
+        <input type="number" id="currDepth" placeholder="e.g. 45" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 25px;">
+      <label style="display: block; font-size: 0.9em; margin-bottom: 5px; font-weight: 600;">Keyboard Placement:</label>
+      <select id="kbPlacement" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background: #fff;">
+        <option value="on-desk">Placed on Desk Surface</option>
+        <option value="tray">Placed on Under-desk Tray</option>
+      </select>
+    </div>
+
+    <button onclick="calculateErgo()"
+            style="width: 100%; padding: 16px; background-color: #000; color: #fff; border: none; border-radius: 8px; font-size: 1.1em; font-weight: bold; cursor: pointer;">
+      Calculate Best Setup
+    </button>
+
+    <div id="ergoResults" style="margin-top: 30px; display: none; padding: 25px; background: #fdfdfd; border: 1px solid #eee; border-radius: 12px; border-top: 5px solid #3498db;">
+      <h3 style="margin-top: 0; color: #2980b9;">Optimal Settings:</h3>
+      <div id="resultsContent" style="line-height: 1.7;"></div>
+    </div>
+  </div>
+
+  <script>
+    function calculateErgo() {
+      const resultsDiv = document.getElementById('ergoResults');
+      const content = document.getElementById('resultsContent');
+
+      // Clear previous output just in case
+      content.innerHTML = "";
+
+      try {
+        const height = parseFloat(document.getElementById('userHeight').value);
+        const currDesk = parseFloat(document.getElementById('currDesk').value);
+        const currChair = parseFloat(document.getElementById('currChair').value);
+        const kbType = document.getElementById('kbPlacement').value;
+        const unit = document.querySelector('input[name="unit"]:checked').value;
+
+        // Validation - ensure fields are not empty or 0
+        if (!height || !currDesk || !currChair) {
+          alert("Please fill in your height, desk height, and chair height.");
+          return;
+        }
+
+        // Calculation Ratios (Calibrated to 52-54cm for 175-180cm height)
+        const idealSeat = (height * 0.30).toFixed(1);
+        const idealDesk = (height * 0.42).toFixed(1);
+        const idealDepth = (height * 0.23).toFixed(1);
+
+        let recommendations = "";
+
+        // Keyboard Tray Logic
+        const threshold = (unit === 'cm') ? 3 : 1.2;
+        if (kbType === "on-desk" && currDesk > (parseFloat(idealDesk) + threshold)) {
+          recommendations += `
+            <li><strong>Keyboard Tray:</strong> ⚠️ <strong>Highly Recommended.</strong>
+            Your desk surface is too high for ergonomic typing. A tray would lower your wrists to the ideal</li>`;
+        }
+
+        // Foot Rest Logic
+        if (currChair > (parseFloat(idealSeat) + (unit === 'cm' ? 2 : 0.8))) {
+          recommendations += `
+            <li><strong>Foot Rest:</strong> ⚠️ <strong>Required.</strong>
+            Your chair is too high for your legs; use a rest to maintain support.</li>`;
+        }
+
+        content.innerHTML = `
+          <ul style="padding-left: 20px; list-style-type: square;">
+            <li><strong>Best Seat Height:</strong> ${idealSeat}${unit}</li>
+            <li><strong>Best Seat Depth:</strong> ${idealDepth}${unit}</li>
+            <li><strong>Best Keyboard Height:</strong> ${idealDesk}${unit}</li>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+            ${recommendations || "<li><em>Your current physical setup is well-aligned.</em></li>"}
+          </ul>
+        `;
+
+        resultsDiv.style.display = 'block';
+
+      } catch (e) {
+        console.error(e);
+        alert("An error occurred. Please check your inputs.");
+      }
+    }
+  </script>
+</body>
+</html>
